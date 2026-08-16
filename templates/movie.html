@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ movie['title'] }} - MoviesHub{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Ahabanza</a>
+    <span>/</span>
+    <a href="{{ url_for('category_page', category=movie['category']) }}">{{ 'Izisobanuye' if movie['category'] == 'translated' else 'Izidasobanuye' }}</a>
+    <span>/</span>
+    <span class="current">{{ movie['title'] }}</span>
+</nav>
+
+<section class="movie-detail">
+    <div class="video-wrap">
+        <video id="player" controls preload="metadata"
+               poster="{{ url_for('uploaded_poster', filename=movie['poster_file']) if movie['poster_file'] else '' }}">
+            <source src="{{ url_for('uploaded_file', filename=movie['video_file']) }}" type="video/mp4">
+            Uruhanya rwago twabuguzwa niyo browser yawe idashobora kuvugana iyi video.
+        </video>
+    </div>
+
+    <div class="movie-meta">
+        <h1>{{ movie['title'] }}</h1>
+        <span class="movie-badge {{ movie['category'] }}">
+            {{ 'Izisobanuye' if movie['category'] == 'translated' else 'Izidasobanuye' }}
+        </span>
+        <p class="views">&#128064; {{ movie['views'] }} kurebwa &middot; Yashyizwe: {{ movie['created_at'][:10] }}</p>
+        <p class="description">{{ movie['description'] or 'Nta gusobanura kwa filime.' }}</p>
+        {% if is_owner %}
+            <form method="post" action="{{ url_for('delete_movie', movie_id=movie['id']) }}"
+                  onsubmit="return confirm('Ukoza niba ushaka gusiba iyi filime?');">
+                <button type="submit" class="btn btn-danger">Siba iyi filime</button>
+            </form>
+        {% endif %}
+    </div>
+</section>
+
+{% if related %}
+<section class="related">
+    <h2>Izi nizo zikunzwe muri iki cyiciro</h2>
+    <div class="movie-grid">
+        {% for m in related %}
+            <article class="movie-card">
+                <a href="{{ url_for('movie_detail', movie_id=m['id']) }}" class="movie-link">
+                    {% if m['poster_file'] %}
+                        <img src="{{ url_for('uploaded_poster', filename=m['poster_file']) }}"
+                             alt="{{ m['title'] }}" class="movie-poster" loading="lazy">
+                    {% else %}
+                        <div class="movie-poster placeholder-poster"><span>&#127916;</span></div>
+                    {% endif %}
+                    <div class="movie-info">
+                        <h3 class="movie-title">{{ m['title'] }}</h3>
+                    </div>
+                </a>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

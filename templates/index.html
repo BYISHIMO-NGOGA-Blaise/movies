@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Izisobanuye' if active_category == 'translated' else 'Izidasobanuye' }} - MoviesHub{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>{{ 'Filime zisobanuye' if active_category == 'translated' else 'Filime zidasobanuye' }}</h1>
+    <p>{{ 'Hitamo filime ushaka kureba.' if movies else 'Nta filime iboneka muri iki cyiciro.' }}</p>
+
+    <form method="get" action="{{ url_for('category_page', category=active_category) }}" class="search-bar">
+        <input type="text" name="q" value="{{ q }}" placeholder="Shakisha filime..." aria-label="Shakisha">
+        <button type="submit" class="btn">Shakisha</button>
+    </form>
+
+    <div class="category-tabs">
+        <a href="{{ url_for('category_page', category='translated', q=q) }}"
+           class="tab {{ 'active' if active_category == 'translated' }}">Izisobanuye ({{ translated_count }})</a>
+        <a href="{{ url_for('category_page', category='nontranslated', q=q) }}"
+           class="tab {{ 'active' if active_category == 'nontranslated' }}">Izidasobanuye ({{ nontranslated_count }})</a>
+    </div>
+</section>
+
+<section class="movie-grid">
+    {% for movie in movies %}
+        <article class="movie-card">
+            <a href="{{ url_for('movie_detail', movie_id=movie['id']) }}" class="movie-link">
+                {% if movie['poster_file'] %}
+                    <img src="{{ url_for('uploaded_poster', filename=movie['poster_file']) }}"
+                         alt="{{ movie['title'] }}" class="movie-poster" loading="lazy">
+                {% else %}
+                    <div class="movie-poster placeholder-poster">
+                        <span>&#127916;</span>
+                    </div>
+                {% endif %}
+                <div class="movie-info">
+                    <h3 class="movie-title">{{ movie['title'] }}</h3>
+                    <span class="movie-badge {{ movie['category'] }}">
+                        {{ 'Izisobanuye' if movie['category'] == 'translated' else 'Izidasobanuye' }}
+                    </span>
+                </div>
+            </a>
+            {% if is_owner %}
+                <form method="post" action="{{ url_for('delete_movie', movie_id=movie['id']) }}"
+                      class="delete-form" onsubmit="return confirm('Ukoza niba ushaka gusiba iyi filime?');">
+                    <button type="submit" class="btn-delete" title="Siba filime">Siba</button>
+                </form>
+            {% endif %}
+        </article>
+    {% else %}
+        <div class="empty-state">
+            <p>Nta filime iboneka. Ongera filime yawe ya mbere!</p>
+            {% if is_owner %}
+                <a href="{{ url_for('upload') }}" class="btn btn-primary">Ongera Filime</a>
+            {% endif %}
+        </div>
+    {% endfor %}
+</section>
+{% endblock %}

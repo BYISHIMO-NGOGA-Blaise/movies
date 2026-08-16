@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Ongera Filime - MoviesHub{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <h1>Ongera Filime</h1>
+    <p class="auth-note">Yandika amakuru ya filime maze ubihishe (upload). Ifoto (poster) izabikwa automatically kuva mubwa filime.</p>
+    <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="form">
+        <div class="field">
+            <label for="title">Umutwe w'ifilime *</label>
+            <input type="text" id="title" name="title" required placeholder="Urugero: Umugabo w'igihanga">
+        </div>
+
+        <div class="field">
+            <label for="category">Icyiciro *</label>
+            <select id="category" name="category" required>
+                <option value="" disabled selected>-- Hitamo icyiciro --</option>
+                <option value="translated">Izisobanuye (translated)</option>
+                <option value="nontranslated">Izidasobanuye (not translated)</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="description">Ibisobanuro</label>
+            <textarea id="description" name="description" rows="4"
+                      placeholder="Andika igisobanuro gito cy'ifilime..."></textarea>
+        </div>
+
+        <div class="field">
+            <label for="video">Dosiye y'ifilime (video) *</label>
+            <input type="file" id="video" name="video" accept="video/*" required>
+            <small style="color: var(--muted); margin-top: 4px; display: block;">Gukatanya: Guhatanisha ubwoko bubwoko bwa video (mp4, mkv, avi, webm, mov, n.k.)</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Hishe Filime</button>
+    </form>
+    <a href="{{ url_for('index') }}" class="back-link">&larr; Subira ahabanza</a>
+</section>
+{% endblock %}

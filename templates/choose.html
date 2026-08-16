@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}MoviesHub - Hitamo icyiciro{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>Kaze kuri <span class="accent">MoviesHub</span></h1>
+    <p>Hitamo icyiciro cya filime ushaka kurebaho.</p>
+</section>
+
+<section class="chooser">
+    <a href="{{ url_for('category_page', category='translated') }}" class="chooser-card translated">
+        <span class="chooser-icon">&#127916;</span>
+        <h2>Izisobanuye</h2>
+        <p>Filime zisobanuye mu ndimi ukunda.</p>
+        <span class="chooser-count">{{ translated_count }} filime</span>
+    </a>
+    <a href="{{ url_for('category_page', category='nontranslated') }}" class="chooser-card nontranslated">
+        <span class="chooser-icon">&#127916;</span>
+        <h2>Izidasobanuye</h2>
+        <p>Filime zidasobanuye (umwimerere).</p>
+        <span class="chooser-count">{{ nontranslated_count }} filime</span>
+    </a>
+</section>
+{% endblock %}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="rw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MoviesHub{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="{{ url_for('index') }}" class="brand">
+                <span class="brand-icon">&#127916;</span>
+                <span class="brand-name">MoviesHub</span>
+            </a>
+            <nav class="nav">
+                <a href="{{ url_for('index') }}" class="nav-link">Ahabanza</a>
+                {% if is_owner %}
+                    <a href="{{ url_for('upload') }}" class="nav-link">Ongera Filime</a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">Sohoka</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-link nav-owner">Owner Login</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-area">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            &copy; {{ current_year }} MoviesHub &mdash; Kurebana filime byoroshye.
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
