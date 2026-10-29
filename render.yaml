@@ -29,3 +29,9 @@ services:
         value: https
       - key: MOVIESHUB_MAX_UPLOAD_MB
         value: "500"
+      - key: GUNICORN_THREADS
+        value: "4"
+      - key: GUNICORN_TIMEOUT
+        value: "600"
+      - key: MOVIESHUB_POSTER_WORKERS
+        value: "1"

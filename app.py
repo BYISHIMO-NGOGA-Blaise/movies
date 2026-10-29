@@ -1,6 +1,7 @@
 import os
 import secrets
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import wraps
 from mimetypes import guess_type
@@ -49,6 +50,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 ALLOWED_VIDEO_EXTENSIONS = {"mp4", "mkv", "avi", "webm", "mov", "m4v", "ogv"}
+POSTER_WORKERS = int(os.environ.get("MOVIESHUB_POSTER_WORKERS", "1"))
+poster_executor = ThreadPoolExecutor(max_workers=POSTER_WORKERS, thread_name_prefix="poster")
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(POSTER_DIR, exist_ok=True)
@@ -84,6 +87,14 @@ def init_db():
             views INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL
         );
+        """
+    )
+    conn.executescript(
+        """
+        CREATE INDEX IF NOT EXISTS idx_movies_category_created
+            ON movies(category, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_movies_category_title
+            ON movies(category, title);
         """
     )
     existing = conn.execute("SELECT id FROM users WHERE username = ?", (ADMIN_USERNAME,)).fetchone()
@@ -180,6 +191,15 @@ def inject_globals():
     }
 
 
+def generate_poster_async(video_path, poster_name, poster_path, movie_id):
+    if not extract_poster_from_video(video_path, poster_path):
+        return
+    conn = get_db()
+    conn.execute("UPDATE movies SET poster_file = ? WHERE id = ?", (poster_name, movie_id))
+    conn.commit()
+    conn.close()
+
+
 def movie_count():
     try:
         conn = get_db()
@@ -196,6 +216,10 @@ def security_headers(response):
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    if request.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=604800, immutable"
+    elif request.path.startswith("/uploads/posters/"):
+        response.headers["Cache-Control"] = "public, max-age=86400"
     if production:
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     return response
@@ -328,26 +352,34 @@ def upload():
 
         video_name = unique_upload_name(video.filename)
         video_path = os.path.join(UPLOAD_DIR, video_name)
-        video.save(video_path)
+        temp_path = f"{video_path}.uploading"
+        with open(temp_path, "wb") as output:
+            chunk = video.stream.read(1024 * 1024)
+            while chunk:
+                output.write(chunk)
+                chunk = video.stream.read(1024 * 1024)
+        os.replace(temp_path, video_path)
 
-        # Auto-generate poster from first frame of video
-        poster_name = None
         poster_name_base = os.path.splitext(video_name)[0] + ".jpg"
         poster_path = os.path.join(POSTER_DIR, poster_name_base)
-        
-        if extract_poster_from_video(video_path, poster_path):
-            poster_name = poster_name_base
-        else:
-            print(f"Warning: Could not extract poster from video {video_name}")
 
         conn = get_db()
-        conn.execute(
+        cursor = conn.execute(
             "INSERT INTO movies (title, description, category, video_file, poster_file, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            (title, description, category, video_name, poster_name, datetime.now().isoformat()),
+            (title, description, category, video_name, None, datetime.now().isoformat()),
         )
+        movie_id = cursor.lastrowid
         conn.commit()
         conn.close()
+
+        poster_executor.submit(
+            generate_poster_async,
+            video_path,
+            poster_name_base,
+            poster_path,
+            movie_id,
+        )
         flash("Filime yongeweho neza!", "success")
         return redirect(url_for("index"))
 
