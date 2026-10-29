@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: movieshub
+    runtime: docker
+    plan: starter
+    healthCheckPath: /healthz
+    disk:
+      name: movieshub-data
+      mountPath: /data
+      sizeGB: 10
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: MOVIESHUB_DATABASE
+        value: /data/movieshub.db
+      - key: MOVIESHUB_UPLOAD_DIR
+        value: /data/uploads
+      - key: MOVIESHUB_POSTER_DIR
+        value: /data/uploads/posters
+      - key: MOVIESHUB_USERNAME
+        value: owner
+      - key: MOVIESHUB_PASSWORD
+        sync: false
+      - key: MOVIESHUB_SECRET
+        generateValue: true
+      - key: MOVIESHUB_COOKIE_SECURE
+        value: "1"
+      - key: MOVIESHUB_URL_SCHEME
+        value: https
+      - key: MOVIESHUB_MAX_UPLOAD_MB
+        value: "500"

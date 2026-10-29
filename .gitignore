@@ -39,6 +39,7 @@ instance/
 server.log
 server.err.log
 .env
+.render/
 
 # Database
 *.db
