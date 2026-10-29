@@ -38,6 +38,7 @@ instance/
 *.log
 server.log
 server.err.log
+.env
 
 # Database
 *.db

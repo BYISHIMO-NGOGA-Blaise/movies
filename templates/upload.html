@@ -6,6 +6,7 @@
     <h1>Ongera Filime</h1>
     <p class="auth-note">Yandika amakuru ya filime maze ubihishe (upload). Ifoto (poster) izabikwa automatically kuva mubwa filime.</p>
     <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="field">
             <label for="title">Umutwe w'ifilime *</label>
             <input type="text" id="title" name="title" required placeholder="Urugero: Umugabo w'igihanga">

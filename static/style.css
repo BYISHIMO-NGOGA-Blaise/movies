@@ -76,6 +76,7 @@ body {
 }
 
 .nav-link:hover { color: var(--text); background: var(--card); }
+.nav-button { border: 0; background: transparent; font-family: inherit; cursor: pointer; }
 
 .nav-owner {
     background: var(--accent);

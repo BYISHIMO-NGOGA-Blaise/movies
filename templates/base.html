@@ -17,7 +17,10 @@
                 <a href="{{ url_for('index') }}" class="nav-link">Ahabanza</a>
                 {% if is_owner %}
                     <a href="{{ url_for('upload') }}" class="nav-link">Ongera Filime</a>
-                    <a href="{{ url_for('logout') }}" class="nav-link">Sohoka</a>
+                    <form method="post" action="{{ url_for('logout') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="nav-link nav-button">Sohoka</button>
+                    </form>
                 {% else %}
                     <a href="{{ url_for('login') }}" class="nav-link nav-owner">Owner Login</a>
                 {% endif %}

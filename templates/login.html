@@ -6,6 +6,7 @@
     <h1>Owner Login</h1>
     <p class="auth-note">Ubwiru bw'umwene wa MoviesHub.</p>
     <form method="post" action="{{ url_for('login') }}" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="field">
             <label for="username">Izina (Username)</label>
             <input type="text" id="username" name="username" required autofocus>

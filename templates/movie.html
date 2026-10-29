@@ -14,7 +14,7 @@
     <div class="video-wrap">
         <video id="player" controls preload="metadata"
                poster="{{ url_for('uploaded_poster', filename=movie['poster_file']) if movie['poster_file'] else '' }}">
-            <source src="{{ url_for('uploaded_file', filename=movie['video_file']) }}" type="video/mp4">
+            <source src="{{ url_for('uploaded_file', filename=movie['video_file']) }}">
             Uruhanya rwago twabuguzwa niyo browser yawe idashobora kuvugana iyi video.
         </video>
     </div>
@@ -29,6 +29,7 @@
         {% if is_owner %}
             <form method="post" action="{{ url_for('delete_movie', movie_id=movie['id']) }}"
                   onsubmit="return confirm('Ukoza niba ushaka gusiba iyi filime?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-danger">Siba iyi filime</button>
             </form>
         {% endif %}

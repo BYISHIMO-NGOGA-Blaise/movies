@@ -41,6 +41,7 @@
             {% if is_owner %}
                 <form method="post" action="{{ url_for('delete_movie', movie_id=movie['id']) }}"
                       class="delete-form" onsubmit="return confirm('Ukoza niba ushaka gusiba iyi filime?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button type="submit" class="btn-delete" title="Siba filime">Siba</button>
                 </form>
             {% endif %}

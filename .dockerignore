@@ -1,0 +1,12 @@
+.git
+.github
+.vscode
+.venv
+__pycache__
+.pytest_cache
+*.pyc
+*.log
+*.db
+uploads
+server.err.log
+server.log
