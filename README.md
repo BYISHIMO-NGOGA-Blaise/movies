@@ -13,6 +13,10 @@ python app.py
 
 Open `http://127.0.0.1:5000`.
 
+The owner login link is intentionally not shown publicly. The default owner route is
+`/owner-access`; configure a private route with `MOVIESHUB_OWNER_LOGIN_PATH`, for example
+`/staff-9f8a7c`.
+
 The local development owner is `owner`; its password is `admin123`. Set real credentials before exposing the application:
 
 ```powershell

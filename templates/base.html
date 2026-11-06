@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MoviesHub{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20261106-1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20261106-2') }}">
 </head>
 <body>
     <header class="site-header">
@@ -21,8 +21,6 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="nav-link nav-button">Sohoka</button>
                     </form>
-                {% else %}
-                    <a href="{{ url_for('login') }}" class="nav-link nav-owner">Owner Login</a>
                 {% endif %}
             </nav>
         </div>
@@ -48,6 +46,6 @@
         </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='script.js', v='20261106-1') }}"></script>
+    <script src="{{ url_for('static', filename='script.js', v='20261106-2') }}"></script>
 </body>
 </html>

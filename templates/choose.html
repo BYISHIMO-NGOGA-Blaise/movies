@@ -3,22 +3,25 @@
 
 {% block content %}
 <section class="hero">
-    <h1>Kaze kuri <span class="accent">MoviesHub</span></h1>
-    <p>Hitamo icyiciro cya filime ushaka kurebaho.</p>
+    <span class="hero-eyebrow">Sinegereza filime zawe</span>
+    <h1>Kureba filime ku <span class="accent">MoviesHub</span></h1>
+    <p>Hitamo ubwoko bwa filime ushaka kandi utangire kureba mu kanya.</p>
 </section>
 
 <section class="chooser">
     <a href="{{ url_for('category_page', category='translated') }}" class="chooser-card translated">
-        <span class="chooser-icon">&#127916;</span>
+        <span class="chooser-icon" aria-hidden="true">&#9654;</span>
         <h2>Izisobanuye</h2>
         <p>Filime zisobanuye mu ndimi ukunda.</p>
         <span class="chooser-count">{{ translated_count }} filime</span>
+        <span class="chooser-action">Reba filime &rarr;</span>
     </a>
     <a href="{{ url_for('category_page', category='nontranslated') }}" class="chooser-card nontranslated">
-        <span class="chooser-icon">&#127916;</span>
+        <span class="chooser-icon" aria-hidden="true">&#9654;</span>
         <h2>Izidasobanuye</h2>
         <p>Filime zidasobanuye (umwimerere).</p>
         <span class="chooser-count">{{ nontranslated_count }} filime</span>
+        <span class="chooser-action">Reba filime &rarr;</span>
     </a>
 </section>
 {% endblock %}

@@ -27,7 +27,9 @@ def client(tmp_path, monkeypatch):
         yield test_client
 
 
-def csrf_token(client, path="/login"):
+def csrf_token(client, path=None):
+    if path is None:
+        path = app_module.OWNER_LOGIN_PATH
     response = client.get(path)
     match = re.search(rb'name="csrf_token" value="([^"]+)"', response.data)
     assert match, response.data[:500]
@@ -38,7 +40,8 @@ def test_public_pages_and_database(client):
     assert client.get("/").status_code == 200
     assert client.get("/category/translated?q=test").status_code == 200
     assert client.get("/category/nontranslated").status_code == 200
-    assert client.get("/login").status_code == 200
+    assert client.get(app_module.OWNER_LOGIN_PATH).status_code == 200
+    assert client.get("/login").status_code == 404
     health = client.get("/healthz")
     assert health.status_code == 200
     assert health.get_json() == {"status": "ok"}
@@ -51,10 +54,10 @@ def test_public_pages_and_database(client):
 
 
 def test_owner_login_logout_csrf(client):
-    assert client.post("/login", data={"username": "owner", "password": "admin123"}).status_code == 400
+    assert client.post(app_module.OWNER_LOGIN_PATH, data={"username": "owner", "password": "admin123"}).status_code == 400
 
     token = csrf_token(client)
-    response = client.post("/login", data={
+    response = client.post(app_module.OWNER_LOGIN_PATH, data={
         "username": "owner", "password": "admin123", "csrf_token": token
     })
     assert response.status_code == 302
@@ -68,7 +71,7 @@ def test_owner_login_logout_csrf(client):
 
 def test_upload_validation_and_success(client):
     token = csrf_token(client)
-    client.post("/login", data={
+    client.post(app_module.OWNER_LOGIN_PATH, data={
         "username": "owner", "password": "admin123", "csrf_token": token
     })
     token = csrf_token(client, "/upload")
@@ -99,7 +102,7 @@ def test_upload_validation_and_success(client):
 
 def test_uploaded_video_is_served_without_transforming_or_changing_bytes(client):
     token = csrf_token(client)
-    client.post("/login", data={
+    client.post(app_module.OWNER_LOGIN_PATH, data={
         "username": "owner", "password": "admin123", "csrf_token": token
     })
     video_bytes = bytes(range(256)) * 1024
@@ -129,7 +132,7 @@ def test_uploaded_video_is_served_without_transforming_or_changing_bytes(client)
 
 def test_upload_page_contains_progress_ui(client):
     token = csrf_token(client)
-    client.post("/login", data={
+    client.post(app_module.OWNER_LOGIN_PATH, data={
         "username": "owner", "password": "admin123", "csrf_token": token
     })
 
@@ -150,7 +153,7 @@ def test_upload_preserves_movies_in_other_category(client):
     connection.close()
 
     token = csrf_token(client)
-    client.post("/login", data={
+    client.post(app_module.OWNER_LOGIN_PATH, data={
         "username": "owner", "password": "admin123", "csrf_token": token
     })
 

@@ -28,6 +28,9 @@ except ImportError:
     cv2 = None
 
 ADMIN_USERNAME = os.environ.get("MOVIESHUB_USERNAME", "owner")
+OWNER_LOGIN_PATH = "/" + os.environ.get(
+    "MOVIESHUB_OWNER_LOGIN_PATH", "owner-access"
+).strip("/")
 
 app = Flask(__name__)
 production = os.environ.get("FLASK_ENV", "").lower() == "production"
@@ -326,7 +329,7 @@ def movie_detail(movie_id):
     return render_template("movie.html", movie=movie, related=related)
 
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route(OWNER_LOGIN_PATH, methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         validate_csrf()

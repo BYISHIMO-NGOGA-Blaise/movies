@@ -19,6 +19,8 @@ services:
         value: /data/uploads/posters
       - key: MOVIESHUB_USERNAME
         value: owner
+      - key: MOVIESHUB_OWNER_LOGIN_PATH
+        value: /owner-entry-7f3a9c
       - key: MOVIESHUB_PASSWORD
         sync: false
       - key: MOVIESHUB_SECRET
