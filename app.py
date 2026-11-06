@@ -546,32 +546,26 @@ def manage_live_match():
         validate_csrf()
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
-        video = request.files.get("video")
+        stream_url = request.form.get("stream_url", "").strip()
+        embed_url = request.form.get("embed_url", "").strip()
         scheduled_at = request.form.get("scheduled_at", "").strip()
         is_live = 1 if request.form.get("is_live") == "1" else 0
         if not title or not scheduled_at:
             flash("Enter a match title and schedule date.", "error")
             return redirect(url_for("manage_live_match"))
-        if not video or not video.filename:
-            flash("Choose a match video file.", "error")
+        if not valid_stream_url(stream_url) or not valid_stream_url(embed_url):
+            flash("Provider URLs must be valid http or https URLs.", "error")
             return redirect(url_for("manage_live_match"))
-        if not allowed_file(video.filename, ALLOWED_VIDEO_EXTENSIONS):
-            flash("Choose a supported video file.", "error")
+        if not stream_url and not embed_url:
+            flash("Add a live stream or embed provider URL.", "error")
             return redirect(url_for("manage_live_match"))
-
-        video_name = unique_upload_name(video.filename)
-        video_path = os.path.join(UPLOAD_DIR, video_name)
-        temp_path = f"{video_path}.uploading"
-        with open(temp_path, "wb") as output:
-            shutil.copyfileobj(video.stream, output, length=1024 * 1024)
-        os.replace(temp_path, video_path)
 
         conn = get_db()
         conn.execute(
             "INSERT INTO live_matches "
             "(title, description, video_file, stream_url, embed_url, scheduled_at, is_live, created_at) "
-            "VALUES (?, ?, ?, '', '', ?, ?, ?)",
-            (title, description, video_name, scheduled_at, is_live, datetime.now().isoformat()),
+            "VALUES (?, ?, '', ?, ?, ?, ?, ?)",
+            (title, description, stream_url, embed_url, scheduled_at, is_live, datetime.now().isoformat()),
         )
         conn.commit()
         conn.close()

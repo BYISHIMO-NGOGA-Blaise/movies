@@ -4,8 +4,8 @@
 {% block content %}
 <section class="auth-card">
     <h1>Add Live Match</h1>
-    <p class="auth-note">Upload the match video and schedule it for visitors.</p>
-    <form method="post" action="{{ url_for('manage_live_match') }}" class="form" enctype="multipart/form-data">
+    <p class="auth-note">Connect an authorized live provider and schedule the match.</p>
+    <form method="post" action="{{ url_for('manage_live_match') }}" class="form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="field">
             <label for="title">Match title *</label>
@@ -16,8 +16,12 @@
             <input type="datetime-local" id="scheduled_at" name="scheduled_at" required>
         </div>
         <div class="field">
-            <label for="video">Match video *</label>
-            <input type="file" id="video" name="video" accept="video/*" required>
+            <label for="embed_url">Provider embed player URL</label>
+            <input type="url" id="embed_url" name="embed_url" placeholder="https://provider.example/embed/match">
+        </div>
+        <div class="field">
+            <label for="stream_url">Direct provider HLS URL (.m3u8)</label>
+            <input type="url" id="stream_url" name="stream_url" placeholder="https://provider.example/live.m3u8">
         </div>
         <div class="field">
             <label for="description">Description</label>

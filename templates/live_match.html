@@ -11,13 +11,16 @@
         <p>{{ match['description'] }}</p>
     </div>
     <div class="video-wrap live-player">
-        {% if match['video_file'] %}
-        <video id="live-video" controls autoplay playsinline
-               src="{{ url_for('uploaded_file', filename=match['video_file']) }}"></video>
-        {% elif match['embed_url'] %}
+        {% if match['embed_url'] %}
         <iframe src="{{ match['embed_url'] }}" title="{{ match['title'] }}" allowfullscreen
                 sandbox="allow-scripts allow-presentation allow-popups"></iframe>
+        {% elif match['stream_url'] %}
+        <video id="live-video" controls autoplay playsinline data-stream-url="{{ match['stream_url'] }}"></video>
         {% endif %}
     </div>
 </section>
+{% if match['stream_url'] and not match['embed_url'] %}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script src="{{ url_for('static', filename='live-player.js') }}"></script>
+{% endif %}
 {% endblock %}
