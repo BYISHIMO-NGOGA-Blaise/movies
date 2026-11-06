@@ -50,7 +50,8 @@ def test_public_pages_and_database(client):
     connection = sqlite3.connect(app_module.DATABASE)
     tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     connection.close()
-    assert {"users", "movies"}.issubset(tables)
+    assert {"users", "movies", "songs"}.issubset(tables)
+    assert client.get("/songs").status_code == 200
 
 
 def test_owner_login_logout_csrf(client):
@@ -204,3 +205,31 @@ def test_catalog_manifest_recovers_movies_after_database_reset(client):
     ).fetchone()
     connection.close()
     assert row == ("Persisted Movie", "nontranslated")
+
+
+def test_owner_can_upload_and_play_song(client):
+    client.post(app_module.OWNER_LOGIN_PATH, data={
+        "username": "owner",
+        "password": "admin123",
+        "csrf_token": csrf_token(client),
+    })
+    response = client.post("/songs/upload", data={
+        "csrf_token": csrf_token(client, "/songs/upload"),
+        "title": "Test Song",
+        "artist": "Test Artist",
+        "description": "A test track",
+        "audio": (io.BytesIO(b"not a real audio file"), "song.mp3"),
+    }, content_type="multipart/form-data")
+    assert response.status_code == 302
+
+    connection = sqlite3.connect(app_module.DATABASE)
+    song = connection.execute(
+        "SELECT title, artist, audio_file FROM songs"
+    ).fetchone()
+    connection.close()
+    assert song[:2] == ("Test Song", "Test Artist")
+
+    page = client.get("/songs")
+    assert page.status_code == 200
+    assert b"Test Song" in page.data
+    assert client.get(f"/uploads/{song[2]}").status_code == 200

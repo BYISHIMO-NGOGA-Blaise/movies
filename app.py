@@ -56,6 +56,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 ALLOWED_VIDEO_EXTENSIONS = {"mp4", "mkv", "avi", "webm", "mov", "m4v", "ogv"}
+ALLOWED_AUDIO_EXTENSIONS = {"mp3", "wav", "m4a", "aac", "ogg", "flac"}
 POSTER_WORKERS = int(os.environ.get("MOVIESHUB_POSTER_WORKERS", "1"))
 poster_executor = ThreadPoolExecutor(max_workers=POSTER_WORKERS, thread_name_prefix="poster")
 
@@ -146,6 +147,14 @@ def init_db():
             video_file TEXT NOT NULL,
             poster_file TEXT,
             views INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS songs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            artist TEXT NOT NULL DEFAULT '',
+            description TEXT NOT NULL DEFAULT '',
+            audio_file TEXT NOT NULL,
             created_at TEXT NOT NULL
         );
         """
@@ -472,6 +481,58 @@ def upload():
     return render_template("upload.html")
 
 
+@app.route("/songs")
+def songs():
+    q = request.args.get("q", "").strip()
+    conn = get_db()
+    query = "SELECT * FROM songs"
+    params = []
+    if q:
+        query += " WHERE title LIKE ? OR artist LIKE ?"
+        params = [f"%{q}%", f"%{q}%"]
+    query += " ORDER BY created_at DESC"
+    tracks = conn.execute(query, params).fetchall()
+    conn.close()
+    return render_template("songs.html", tracks=tracks, q=q)
+
+
+@app.route("/songs/upload", methods=["GET", "POST"])
+@login_required
+def upload_song():
+    if request.method == "POST":
+        validate_csrf()
+        title = request.form.get("title", "").strip()
+        artist = request.form.get("artist", "").strip()
+        description = request.form.get("description", "").strip()
+        audio = request.files.get("audio")
+        if not title or not audio or not audio.filename:
+            flash("Enter a song title and choose an audio file.", "error")
+            return redirect(url_for("upload_song"))
+        if not allowed_file(audio.filename, ALLOWED_AUDIO_EXTENSIONS):
+            flash("Choose a supported audio file.", "error")
+            return redirect(url_for("upload_song"))
+
+        audio_name = unique_upload_name(audio.filename)
+        audio_path = os.path.join(UPLOAD_DIR, audio_name)
+        temp_path = f"{audio_path}.uploading"
+        with open(temp_path, "wb") as output:
+            shutil.copyfileobj(audio.stream, output, length=1024 * 1024)
+        os.replace(temp_path, audio_path)
+
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO songs (title, artist, description, audio_file, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (title, artist, description, audio_name, datetime.now().isoformat()),
+        )
+        conn.commit()
+        conn.close()
+        flash("The song was uploaded successfully.", "success")
+        return redirect(url_for("songs"))
+
+    return render_template("upload_song.html")
+
+
 @app.route("/delete/<int:movie_id>", methods=["POST"])
 @login_required
 def delete_movie(movie_id):
@@ -494,6 +555,25 @@ def delete_movie(movie_id):
             os.remove(poster_path)
     flash("The movie was deleted.", "info")
     return redirect(url_for("index"))
+
+
+@app.route("/songs/delete/<int:song_id>", methods=["POST"])
+@login_required
+def delete_song(song_id):
+    validate_csrf()
+    conn = get_db()
+    song = conn.execute("SELECT * FROM songs WHERE id = ?", (song_id,)).fetchone()
+    if song is None:
+        conn.close()
+        abort(404)
+    conn.execute("DELETE FROM songs WHERE id = ?", (song_id,))
+    conn.commit()
+    conn.close()
+    audio_path = os.path.join(UPLOAD_DIR, song["audio_file"])
+    if os.path.isfile(audio_path):
+        os.remove(audio_path)
+    flash("The song was deleted.", "info")
+    return redirect(url_for("songs"))
 
 
 @app.route("/uploads/<path:filename>")

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Songs - MoviesHub{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <span class="hero-eyebrow">Listen anywhere</span>
+    <h1>Discover <span class="accent">Songs</span></h1>
+    <p>Search the catalog and play a song in your browser.</p>
+    <form method="get" action="{{ url_for('songs') }}" class="search-bar">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search songs or artists..." aria-label="Search songs">
+        <button type="submit" class="btn">Search</button>
+    </form>
+</section>
+
+<section class="song-list">
+    {% for track in tracks %}
+    <article class="song-card">
+        <div class="song-details">
+            <div class="song-icon" aria-hidden="true">&#9835;</div>
+            <div>
+                <h2>{{ track['title'] }}</h2>
+                {% if track['artist'] %}<p>{{ track['artist'] }}</p>{% endif %}
+            </div>
+        </div>
+        <audio controls preload="metadata" src="{{ url_for('uploaded_file', filename=track['audio_file']) }}"></audio>
+        {% if track['description'] %}<p class="song-description">{{ track['description'] }}</p>{% endif %}
+        {% if is_owner %}
+        <form method="post" action="{{ url_for('delete_song', song_id=track['id']) }}"
+              onsubmit="return confirm('Are you sure you want to delete this song?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+    </article>
+    {% else %}
+    <div class="empty-state">
+        <p>No songs are available yet.</p>
+        {% if is_owner %}
+        <a href="{{ url_for('upload_song') }}" class="btn btn-primary">Add Song</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}
