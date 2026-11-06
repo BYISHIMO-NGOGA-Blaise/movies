@@ -17,7 +17,7 @@
         <h2>{{ match['title'] }}</h2>
         <p>{{ match['description'] or 'Live match stream.' }}</p>
         <time datetime="{{ match['scheduled_at'] }}">{{ match['scheduled_at'] }}</time>
-        {% if match['stream_url'] or match['embed_url'] %}
+        {% if match['video_file'] or match['stream_url'] or match['embed_url'] %}
         <a class="btn btn-primary" href="{{ url_for('live_match', match_id=match['id']) }}">Watch Match</a>
         {% endif %}
         {% if is_owner %}

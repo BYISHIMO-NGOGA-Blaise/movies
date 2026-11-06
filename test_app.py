@@ -282,17 +282,18 @@ def test_owner_can_add_live_match(client):
         "csrf_token": csrf_token(client, "/live/manage"),
         "title": "Final Match",
         "description": "Championship final",
-        "stream_url": "https://example.com/live.m3u8",
-        "embed_url": "",
+        "video": (io.BytesIO(b"match video bytes"), "final.mp4"),
         "scheduled_at": "2026-11-07T20:00",
         "is_live": "1",
-    })
+    }, content_type="multipart/form-data")
     assert response.status_code == 302
 
     connection = sqlite3.connect(app_module.DATABASE)
     match = connection.execute(
-        "SELECT title, stream_url, is_live FROM live_matches"
+        "SELECT title, video_file, is_live FROM live_matches"
     ).fetchone()
     connection.close()
-    assert match == ("Final Match", "https://example.com/live.m3u8", 1)
+    assert match[0] == "Final Match"
+    assert match[1].endswith("-final.mp4")
+    assert match[2] == 1
     assert b"Final Match" in client.get("/live").data

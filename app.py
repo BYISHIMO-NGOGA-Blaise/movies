@@ -77,7 +77,7 @@ def save_catalog_manifest():
         "FROM songs ORDER BY id"
     ).fetchall()
     live_matches = conn.execute(
-        "SELECT title, description, stream_url, embed_url, scheduled_at, is_live, created_at "
+        "SELECT title, description, video_file, stream_url, embed_url, scheduled_at, is_live, created_at "
         "FROM live_matches ORDER BY id"
     ).fetchall()
     conn.close()
@@ -160,13 +160,19 @@ def restore_catalog_manifest():
         key = (match.get("title", ""), match.get("scheduled_at", ""))
         if key in existing_live:
             continue
+        video_file = match.get("video_file", "")
+        if video_file and not os.path.isfile(
+            os.path.join(UPLOAD_DIR, os.path.basename(video_file))
+        ):
+            continue
         conn.execute(
             "INSERT INTO live_matches "
-            "(title, description, stream_url, embed_url, scheduled_at, is_live, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "(title, description, video_file, stream_url, embed_url, scheduled_at, is_live, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 match.get("title", ""),
                 match.get("description", ""),
+                video_file,
                 match.get("stream_url", ""),
                 match.get("embed_url", ""),
                 match.get("scheduled_at", ""),
@@ -221,6 +227,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             description TEXT NOT NULL DEFAULT '',
+            video_file TEXT NOT NULL DEFAULT '',
             stream_url TEXT NOT NULL DEFAULT '',
             embed_url TEXT NOT NULL DEFAULT '',
             scheduled_at TEXT NOT NULL,
@@ -229,6 +236,13 @@ def init_db():
         );
         """
     )
+    live_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(live_matches)")
+    }
+    if "video_file" not in live_columns:
+        conn.execute(
+            "ALTER TABLE live_matches ADD COLUMN video_file TEXT NOT NULL DEFAULT ''"
+        )
     conn.executescript(
         """
         CREATE INDEX IF NOT EXISTS idx_movies_category_created
@@ -532,26 +546,32 @@ def manage_live_match():
         validate_csrf()
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
-        stream_url = request.form.get("stream_url", "").strip()
-        embed_url = request.form.get("embed_url", "").strip()
+        video = request.files.get("video")
         scheduled_at = request.form.get("scheduled_at", "").strip()
         is_live = 1 if request.form.get("is_live") == "1" else 0
         if not title or not scheduled_at:
             flash("Enter a match title and schedule date.", "error")
             return redirect(url_for("manage_live_match"))
-        if not valid_stream_url(stream_url) or not valid_stream_url(embed_url):
-            flash("Stream URLs must be valid http or https URLs.", "error")
+        if not video or not video.filename:
+            flash("Choose a match video file.", "error")
             return redirect(url_for("manage_live_match"))
-        if not stream_url and not embed_url:
-            flash("Add at least one stream URL.", "error")
+        if not allowed_file(video.filename, ALLOWED_VIDEO_EXTENSIONS):
+            flash("Choose a supported video file.", "error")
             return redirect(url_for("manage_live_match"))
+
+        video_name = unique_upload_name(video.filename)
+        video_path = os.path.join(UPLOAD_DIR, video_name)
+        temp_path = f"{video_path}.uploading"
+        with open(temp_path, "wb") as output:
+            shutil.copyfileobj(video.stream, output, length=1024 * 1024)
+        os.replace(temp_path, video_path)
 
         conn = get_db()
         conn.execute(
             "INSERT INTO live_matches "
-            "(title, description, stream_url, embed_url, scheduled_at, is_live, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (title, description, stream_url, embed_url, scheduled_at, is_live, datetime.now().isoformat()),
+            "(title, description, video_file, stream_url, embed_url, scheduled_at, is_live, created_at) "
+            "VALUES (?, ?, ?, '', '', ?, ?, ?)",
+            (title, description, video_name, scheduled_at, is_live, datetime.now().isoformat()),
         )
         conn.commit()
         conn.close()
@@ -566,12 +586,19 @@ def manage_live_match():
 def delete_live_match(match_id):
     validate_csrf()
     conn = get_db()
+    match = conn.execute(
+        "SELECT video_file FROM live_matches WHERE id = ?", (match_id,)
+    ).fetchone()
     result = conn.execute("DELETE FROM live_matches WHERE id = ?", (match_id,))
     conn.commit()
     conn.close()
     if result.rowcount == 0:
         abort(404)
     save_catalog_manifest()
+    if match and match["video_file"]:
+        video_path = os.path.join(UPLOAD_DIR, match["video_file"])
+        if os.path.isfile(video_path):
+            os.remove(video_path)
     flash("Live match deleted.", "info")
     return redirect(url_for("live_matches"))
 
