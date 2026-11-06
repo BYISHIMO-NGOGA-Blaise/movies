@@ -373,13 +373,6 @@ body {
     width: 100%;
 }
 
-.upload-progress[hidden] {
-    display: none;
-}
-
-.upload-progress:not([hidden]) {
-    display: block;
-}
 
 .upload-progress-track {
     height: 10px;
