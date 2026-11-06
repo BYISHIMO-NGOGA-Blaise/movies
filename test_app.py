@@ -52,7 +52,7 @@ def test_public_pages_and_database(client):
     connection.close()
     assert {"users", "movies", "songs", "live_matches"}.issubset(tables)
     assert client.get("/songs").status_code == 200
-    assert client.get("/live").status_code == 200
+    assert client.get("/live").status_code == 404
 
 
 def test_owner_login_logout_csrf(client):
@@ -272,7 +272,8 @@ def test_owner_can_upload_and_play_song(client):
     assert client.get(f"/uploads/{song[2]}").status_code == 200
 
 
-def test_owner_can_add_live_match(client):
+def test_owner_can_add_live_match(client, monkeypatch):
+    monkeypatch.setattr(app_module, "LIVE_MATCHES_ENABLED", True)
     client.post(app_module.OWNER_LOGIN_PATH, data={
         "username": "owner",
         "password": "admin123",

@@ -33,6 +33,9 @@ ADMIN_USERNAME = os.environ.get("MOVIESHUB_USERNAME", "owner")
 OWNER_LOGIN_PATH = "/" + os.environ.get(
     "MOVIESHUB_OWNER_LOGIN_PATH", "owner-entry-7f3a9c"
 ).strip("/")
+LIVE_MATCHES_ENABLED = os.environ.get("MOVIESHUB_LIVE_MATCHES_ENABLED", "0").lower() in (
+    "1", "true", "yes", "on"
+)
 
 app = Flask(__name__)
 production = os.environ.get("FLASK_ENV", "").lower() == "production"
@@ -373,6 +376,7 @@ def inject_globals():
         "is_owner": bool(session.get("is_owner")),
         "movie_count": movie_count(),
         "csrf_token": get_csrf_token(),
+        "live_matches_enabled": LIVE_MATCHES_ENABLED,
     }
 
 
@@ -521,6 +525,8 @@ def logout():
 
 @app.route("/live")
 def live_matches():
+    if not LIVE_MATCHES_ENABLED:
+        abort(404)
     conn = get_db()
     matches = conn.execute(
         "SELECT * FROM live_matches ORDER BY is_live DESC, scheduled_at ASC"
@@ -531,6 +537,8 @@ def live_matches():
 
 @app.route("/live/<int:match_id>")
 def live_match(match_id):
+    if not LIVE_MATCHES_ENABLED:
+        abort(404)
     conn = get_db()
     match = conn.execute("SELECT * FROM live_matches WHERE id = ?", (match_id,)).fetchone()
     conn.close()
@@ -542,6 +550,8 @@ def live_match(match_id):
 @app.route("/live/manage", methods=["GET", "POST"])
 @login_required
 def manage_live_match():
+    if not LIVE_MATCHES_ENABLED:
+        abort(404)
     if request.method == "POST":
         validate_csrf()
         title = request.form.get("title", "").strip()
@@ -578,6 +588,8 @@ def manage_live_match():
 @app.route("/live/delete/<int:match_id>", methods=["POST"])
 @login_required
 def delete_live_match(match_id):
+    if not LIVE_MATCHES_ENABLED:
+        abort(404)
     validate_csrf()
     conn = get_db()
     match = conn.execute(

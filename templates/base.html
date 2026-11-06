@@ -16,11 +16,12 @@
             <nav class="nav">
                 <a href="{{ url_for('index') }}" class="nav-link">Home</a>
                 <a href="{{ url_for('songs') }}" class="nav-link">Songs</a>
+                {% if live_matches_enabled %}
                 <a href="{{ url_for('live_matches') }}" class="nav-link">Live Matches</a>
+                {% endif %}
                 {% if is_owner %}
                     <a href="{{ url_for('upload') }}" class="nav-link">Add Movie</a>
                     <a href="{{ url_for('upload_song') }}" class="nav-link">Add Song</a>
-                    <a href="{{ url_for('manage_live_match') }}" class="nav-link">Add Live Match</a>
                     <form method="post" action="{{ url_for('logout') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="nav-link nav-button">Sign Out</button>

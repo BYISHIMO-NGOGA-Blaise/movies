@@ -37,3 +37,5 @@ services:
         value: "600"
       - key: MOVIESHUB_POSTER_WORKERS
         value: "1"
+      - key: MOVIESHUB_LIVE_MATCHES_ENABLED
+        value: "0"
