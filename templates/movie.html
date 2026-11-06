@@ -14,7 +14,8 @@
     <div class="video-wrap">
         <video id="player" controls preload="metadata"
                poster="{{ url_for('uploaded_poster', filename=movie['poster_file']) if movie['poster_file'] else '' }}">
-            <source src="{{ url_for('uploaded_file', filename=movie['video_file']) }}">
+            <source src="{{ url_for('uploaded_file', filename=movie['video_file']) }}"
+                    {% if movie['video_file'].lower().endswith('.mkv') %}type="video/x-matroska"{% endif %}>
             Uruhanya rwago twabuguzwa niyo browser yawe idashobora kuvugana iyi video.
         </video>
     </div>

@@ -5,7 +5,7 @@
 <section class="auth-card">
     <h1>Ongera Filime</h1>
     <p class="auth-note">Yandika amakuru ya filime maze ubihishe (upload). Ifoto (poster) izabikwa automatically kuva mubwa filime.</p>
-    <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="form">
+    <form id="upload-form" method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="field">
             <label for="title">Umutwe w'ifilime *</label>
@@ -33,6 +33,13 @@
             <small style="color: var(--muted); margin-top: 4px; display: block;">Gukatanya: Guhatanisha ubwoko bubwoko bwa video (mp4, mkv, avi, webm, mov, n.k.)</small>
         </div>
 
+        <div id="upload-progress" class="upload-progress" hidden aria-live="polite">
+            <div class="upload-progress-track" role="progressbar" aria-label="Upload progress"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="upload-progress-bar" class="upload-progress-bar"></div>
+            </div>
+            <small id="upload-progress-label">Iri kugenda: 0%</small>
+        </div>
         <button type="submit" class="btn btn-primary btn-block">Hishe Filime</button>
     </form>
     <a href="{{ url_for('index') }}" class="back-link">&larr; Subira ahabanza</a>

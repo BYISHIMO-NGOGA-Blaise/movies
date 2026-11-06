@@ -414,7 +414,11 @@ def uploaded_file(filename):
     mimetype = guess_type(filename)[0]
     if filename.lower().endswith(".mkv"):
         mimetype = "video/x-matroska"
-    return send_from_directory(UPLOAD_DIR, filename, mimetype=mimetype, conditional=True)
+    response = send_from_directory(UPLOAD_DIR, filename, mimetype=mimetype, conditional=True)
+    response.headers["Accept-Ranges"] = "bytes"
+    response.headers["Cache-Control"] = "public, max-age=86400, immutable, no-transform"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @app.route("/uploads/posters/<path:filename>")

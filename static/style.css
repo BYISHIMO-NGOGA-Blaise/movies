@@ -312,7 +312,7 @@ body {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
 }
 
-.video-wrap video { width: 100%; max-height: 70vh; display: block; }
+.video-wrap video { width: 100%; max-height: 70vh; display: block; object-fit: contain; }
 
 .movie-meta { padding: 24px 4px; }
 
@@ -367,6 +367,31 @@ body {
 .field input:focus,
 .field textarea:focus,
 .field select:focus { border-color: var(--accent); }
+
+.upload-progress {
+    margin: 4px 0 16px;
+}
+
+.upload-progress-track {
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--bg);
+}
+
+.upload-progress-bar {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 180ms ease;
+}
+
+.upload-progress small {
+    display: block;
+    margin-top: 8px;
+    color: var(--muted);
+}
 
 .back-link {
     display: inline-block;

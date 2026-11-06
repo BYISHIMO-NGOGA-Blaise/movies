@@ -95,3 +95,45 @@ def test_upload_validation_and_success(client):
     movie = connection.execute("SELECT * FROM movies").fetchone()
     connection.close()
     assert movie is not None
+
+
+def test_uploaded_video_is_served_without_transforming_or_changing_bytes(client):
+    token = csrf_token(client)
+    client.post("/login", data={
+        "username": "owner", "password": "admin123", "csrf_token": token
+    })
+    video_bytes = bytes(range(256)) * 1024
+
+    response = client.post("/upload", data={
+        "csrf_token": csrf_token(client, "/upload"),
+        "title": "High Quality Movie",
+        "description": "",
+        "category": "translated",
+        "video": (io.BytesIO(video_bytes), "movie.mp4"),
+    }, content_type="multipart/form-data")
+    assert response.status_code == 302
+
+    connection = sqlite3.connect(app_module.DATABASE)
+    video_file = connection.execute("SELECT video_file FROM movies").fetchone()[0]
+    connection.close()
+
+    with open(os.path.join(app_module.UPLOAD_DIR, video_file), "rb") as video:
+        assert video.read() == video_bytes
+
+    response = client.get(f"/uploads/{video_file}")
+    assert response.status_code == 200
+    assert response.data == video_bytes
+    assert response.headers["Accept-Ranges"] == "bytes"
+    assert "no-transform" in response.headers["Cache-Control"]
+
+
+def test_upload_page_contains_progress_ui(client):
+    token = csrf_token(client)
+    client.post("/login", data={
+        "username": "owner", "password": "admin123", "csrf_token": token
+    })
+
+    response = client.get("/upload")
+    assert response.status_code == 200
+    assert b'id="upload-progress"' in response.data
+    assert b'id="upload-progress-bar"' in response.data
