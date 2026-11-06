@@ -1,5 +1,7 @@
 import os
 import secrets
+import shutil
+import subprocess
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -152,33 +154,57 @@ def extract_poster_from_video(video_path, poster_path):
     Extract first frame from video and save as poster
     Returns True if successful, False otherwise
     """
-    if cv2 is None:
-        return False
+    os.makedirs(os.path.dirname(poster_path), exist_ok=True)
 
-    try:
-        cap = cv2.VideoCapture(video_path)
-        if not cap.isOpened():
-            return False
-        
-        ret, frame = cap.read()
-        cap.release()
-        
-        if not ret or frame is None:
-            return False
-        
-        # Resize frame to thumbnail size (maintains aspect ratio)
-        height, width = frame.shape[:2]
-        aspect_ratio = width / height
-        new_height = 450
-        new_width = int(new_height * aspect_ratio)
-        resized_frame = cv2.resize(frame, (new_width, new_height))
-        
-        # Save as JPEG
-        cv2.imwrite(poster_path, resized_frame)
-        return True
-    except Exception as e:
-        print(f"Error extracting poster: {e}")
-        return False
+    if cv2 is not None:
+        try:
+            cap = cv2.VideoCapture(video_path)
+            if cap.isOpened():
+                frame_count = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 1)
+                positions = (0, max(frame_count // 100, 1), frame_count // 10)
+                for position in positions:
+                    if position:
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, position)
+                    ret, frame = cap.read()
+                    if ret and frame is not None and frame.size:
+                        height, width = frame.shape[:2]
+                        new_height = 450
+                        new_width = max(int(new_height * width / height), 1)
+                        resized_frame = cv2.resize(frame, (new_width, new_height))
+                        if cv2.imwrite(
+                            poster_path,
+                            resized_frame,
+                            [cv2.IMWRITE_JPEG_QUALITY, 95],
+                        ):
+                            cap.release()
+                            return os.path.isfile(poster_path)
+                cap.release()
+        except Exception as e:
+            print(f"Error extracting poster with OpenCV: {e}")
+
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg:
+        temp_poster = poster_path + ".tmp.jpg"
+        try:
+            result = subprocess.run(
+                [
+                    ffmpeg, "-y", "-ss", "1", "-i", video_path,
+                    "-frames:v", "1", "-q:v", "2", temp_poster,
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=60,
+            )
+            if result.returncode == 0 and os.path.isfile(temp_poster):
+                os.replace(temp_poster, poster_path)
+                return True
+        except (OSError, subprocess.TimeoutExpired) as e:
+            print(f"Error extracting poster with ffmpeg: {e}")
+        finally:
+            if os.path.exists(temp_poster):
+                os.remove(temp_poster)
+
+    return False
 
 
 @app.context_processor
@@ -362,24 +388,19 @@ def upload():
 
         poster_name_base = os.path.splitext(video_name)[0] + ".jpg"
         poster_path = os.path.join(POSTER_DIR, poster_name_base)
+        poster_file = None
+        if extract_poster_from_video(video_path, poster_path):
+            poster_file = poster_name_base
 
         conn = get_db()
-        cursor = conn.execute(
+        conn.execute(
             "INSERT INTO movies (title, description, category, video_file, poster_file, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            (title, description, category, video_name, None, datetime.now().isoformat()),
+            (title, description, category, video_name, poster_file, datetime.now().isoformat()),
         )
-        movie_id = cursor.lastrowid
         conn.commit()
         conn.close()
 
-        poster_executor.submit(
-            generate_poster_async,
-            video_path,
-            poster_name_base,
-            poster_path,
-            movie_id,
-        )
         flash("Filime yongeweho neza!", "success")
         return redirect(url_for("index"))
 
@@ -423,7 +444,9 @@ def uploaded_file(filename):
 
 @app.route("/uploads/posters/<path:filename>")
 def uploaded_poster(filename):
-    return send_from_directory(POSTER_DIR, filename)
+    response = send_from_directory(POSTER_DIR, filename, conditional=True)
+    response.headers["Cache-Control"] = "public, max-age=86400, immutable, no-transform"
+    return response
 
 
 @app.errorhandler(403)
