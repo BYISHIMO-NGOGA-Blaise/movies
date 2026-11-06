@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="rw">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,12 +14,12 @@
                 <span class="brand-name">MoviesHub</span>
             </a>
             <nav class="nav">
-                <a href="{{ url_for('index') }}" class="nav-link">Ahabanza</a>
+                <a href="{{ url_for('index') }}" class="nav-link">Home</a>
                 {% if is_owner %}
-                    <a href="{{ url_for('upload') }}" class="nav-link">Ongera Filime</a>
+                    <a href="{{ url_for('upload') }}" class="nav-link">Add Movie</a>
                     <form method="post" action="{{ url_for('logout') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <button type="submit" class="nav-link nav-button">Sohoka</button>
+                        <button type="submit" class="nav-link nav-button">Sign Out</button>
                     </form>
                 {% endif %}
             </nav>
@@ -42,7 +42,7 @@
 
     <footer class="site-footer">
         <div class="container">
-            &copy; {{ current_year }} MoviesHub &mdash; Kurebana filime byoroshye.
+            &copy; {{ current_year }} MoviesHub &mdash; Movies made easy to watch.
         </div>
     </footer>
 

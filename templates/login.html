@@ -4,19 +4,19 @@
 {% block content %}
 <section class="auth-card">
     <h1>Owner Login</h1>
-    <p class="auth-note">Ubwiru bw'umwene wa MoviesHub.</p>
+    <p class="auth-note">MoviesHub owner access.</p>
     <form method="post" action="{{ url_for('login') }}" class="form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="field">
-            <label for="username">Izina (Username)</label>
+            <label for="username">Username</label>
             <input type="text" id="username" name="username" required autofocus>
         </div>
         <div class="field">
-            <label for="password">Ijambobanga (Password)</label>
+            <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Injira</button>
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
     </form>
-    <a href="{{ url_for('index') }}" class="back-link">&larr; Subira ahabanza</a>
+    <a href="{{ url_for('index') }}" class="back-link">&larr; Back to home</a>
 </section>
 {% endblock %}

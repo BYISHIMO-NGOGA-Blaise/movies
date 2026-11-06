@@ -1,27 +1,27 @@
 {% extends "base.html" %}
-{% block title %}MoviesHub - Hitamo icyiciro{% endblock %}
+{% block title %}MoviesHub - Choose a Category{% endblock %}
 
 {% block content %}
 <section class="hero">
-    <span class="hero-eyebrow">Sinegereza filime zawe</span>
-    <h1>Kureba filime ku <span class="accent">MoviesHub</span></h1>
-    <p>Hitamo ubwoko bwa filime ushaka kandi utangire kureba mu kanya.</p>
+    <span class="hero-eyebrow">Stream your movies</span>
+    <h1>Watch movies on <span class="accent">MoviesHub</span></h1>
+    <p>Choose a movie category and start watching.</p>
 </section>
 
 <section class="chooser">
     <a href="{{ url_for('category_page', category='translated') }}" class="chooser-card translated">
         <span class="chooser-icon" aria-hidden="true">&#9654;</span>
-        <h2>Izisobanuye</h2>
-        <p>Filime zisobanuye mu ndimi ukunda.</p>
-        <span class="chooser-count">{{ translated_count }} filime</span>
-        <span class="chooser-action">Reba filime &rarr;</span>
+        <h2>Translated</h2>
+        <p>Movies translated into the languages you enjoy.</p>
+        <span class="chooser-count">{{ translated_count }} movies</span>
+        <span class="chooser-action">Browse movies &rarr;</span>
     </a>
     <a href="{{ url_for('category_page', category='nontranslated') }}" class="chooser-card nontranslated">
         <span class="chooser-icon" aria-hidden="true">&#9654;</span>
-        <h2>Izidasobanuye</h2>
-        <p>Filime zidasobanuye (umwimerere).</p>
-        <span class="chooser-count">{{ nontranslated_count }} filime</span>
-        <span class="chooser-action">Reba filime &rarr;</span>
+        <h2>Not Translated</h2>
+        <p>Movies in their original language.</p>
+        <span class="chooser-count">{{ nontranslated_count }} movies</span>
+        <span class="chooser-action">Browse movies &rarr;</span>
     </a>
 </section>
 {% endblock %}

@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 progress.hidden = false;
                 progress.style.display = "block";
                 progressBar.style.width = "1%";
-                progressLabel.textContent = "Iri gutangira: 0%";
+                progressLabel.textContent = "Starting upload: 0%";
 
                 var request = new XMLHttpRequest();
                 request.open("POST", uploadForm.action);
@@ -27,10 +27,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     var percent = Math.round((event.loaded / event.total) * 100);
                     progressBar.style.width = percent + "%";
                     progressTrack.setAttribute("aria-valuenow", percent);
-                    progressLabel.textContent = "Iri kugenda: " + percent + "%";
+                    progressLabel.textContent = "Uploading: " + percent + "%";
                 });
                 request.upload.addEventListener("load", function () {
-                    progressLabel.textContent = "Upload yagenze. File irimo gutunganywa...";
+                    progressLabel.textContent = "Upload complete. Processing the file...";
                 });
                 request.addEventListener("load", function () {
                     if (request.status >= 200 && request.status < 400) {
@@ -38,13 +38,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
                     button.disabled = false;
-                    button.textContent = "Hishe Filime";
-                    progressLabel.textContent = "Upload yananiye (HTTP " + request.status + "). Ongera ugerageze.";
+                    button.textContent = "Upload Movie";
+                    progressLabel.textContent = "Upload failed (HTTP " + request.status + "). Please try again.";
                 });
                 request.addEventListener("error", function () {
                     button.disabled = false;
-                    button.textContent = "Hishe Filime";
-                    progressLabel.textContent = "Ntacyo byakoreye kubera ihuriro. Ongera ugerageze.";
+                    button.textContent = "Upload Movie";
+                    progressLabel.textContent = "A network error occurred. Please try again.";
                 });
                 request.send(new FormData(uploadForm));
             }

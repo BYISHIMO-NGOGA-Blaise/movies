@@ -1,36 +1,36 @@
 {% extends "base.html" %}
-{% block title %}Ongera Filime - MoviesHub{% endblock %}
+{% block title %}Add Movie - MoviesHub{% endblock %}
 
 {% block content %}
 <section class="auth-card">
-    <h1>Ongera Filime</h1>
-    <p class="auth-note">Yandika amakuru ya filime maze ubihishe (upload). Ifoto (poster) izabikwa automatically kuva mubwa filime.</p>
+    <h1>Add Movie</h1>
+    <p class="auth-note">Enter the movie details and upload a video. A poster will be generated automatically.</p>
     <form id="upload-form" method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="field">
-            <label for="title">Umutwe w'ifilime *</label>
-            <input type="text" id="title" name="title" required placeholder="Urugero: Umugabo w'igihanga">
+            <label for="title">Movie title *</label>
+            <input type="text" id="title" name="title" required placeholder="Example: The Adventure">
         </div>
 
         <div class="field">
-            <label for="category">Icyiciro *</label>
+            <label for="category">Category *</label>
             <select id="category" name="category" required>
-                <option value="" disabled selected>-- Hitamo icyiciro --</option>
-                <option value="translated">Izisobanuye (translated)</option>
-                <option value="nontranslated">Izidasobanuye (not translated)</option>
+                <option value="" disabled selected>-- Select a category --</option>
+                <option value="translated">Translated</option>
+                <option value="nontranslated">Not translated</option>
             </select>
         </div>
 
         <div class="field">
-            <label for="description">Ibisobanuro</label>
+            <label for="description">Description</label>
             <textarea id="description" name="description" rows="4"
-                      placeholder="Andika igisobanuro gito cy'ifilime..."></textarea>
+                      placeholder="Write a short movie description..."></textarea>
         </div>
 
         <div class="field">
-            <label for="video">Dosiye y'ifilime (video) *</label>
+            <label for="video">Movie video *</label>
             <input type="file" id="video" name="video" accept="video/*" required>
-            <small style="color: var(--muted); margin-top: 4px; display: block;">Gukatanya: Guhatanisha ubwoko bubwoko bwa video (mp4, mkv, avi, webm, mov, n.k.)</small>
+            <small style="color: var(--muted); margin-top: 4px; display: block;">Supported formats: mp4, mkv, avi, webm, mov, m4v, and ogv.</small>
         </div>
 
         <div id="upload-progress" class="upload-progress" aria-live="polite">
@@ -38,10 +38,10 @@
                  aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                 <div id="upload-progress-bar" class="upload-progress-bar"></div>
             </div>
-            <small id="upload-progress-label">Iri kugenda: 0%</small>
+            <small id="upload-progress-label">Uploading: 0%</small>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Hishe Filime</button>
+        <button type="submit" class="btn btn-primary btn-block">Upload Movie</button>
     </form>
-    <a href="{{ url_for('index') }}" class="back-link">&larr; Subira ahabanza</a>
+    <a href="{{ url_for('index') }}" class="back-link">&larr; Back to home</a>
 </section>
 {% endblock %}

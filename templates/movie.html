@@ -3,9 +3,9 @@
 
 {% block content %}
 <nav class="breadcrumb">
-    <a href="{{ url_for('index') }}">Ahabanza</a>
+    <a href="{{ url_for('index') }}">Home</a>
     <span>/</span>
-    <a href="{{ url_for('category_page', category=movie['category']) }}">{{ 'Izisobanuye' if movie['category'] == 'translated' else 'Izidasobanuye' }}</a>
+    <a href="{{ url_for('category_page', category=movie['category']) }}">{{ 'Translated' if movie['category'] == 'translated' else 'Not Translated' }}</a>
     <span>/</span>
     <span class="current">{{ movie['title'] }}</span>
 </nav>
@@ -16,22 +16,22 @@
                poster="{{ url_for('uploaded_poster', filename=movie['poster_file']) }}"{% endif %}>
             <source src="{{ url_for('uploaded_file', filename=movie['video_file']) }}"
                     {% if movie['video_file'].lower().endswith('.mkv') %}type="video/x-matroska"{% endif %}>
-            Uruhanya rwago twabuguzwa niyo browser yawe idashobora kuvugana iyi video.
+            Your browser does not support HTML5 video playback.
         </video>
     </div>
 
     <div class="movie-meta">
         <h1>{{ movie['title'] }}</h1>
         <span class="movie-badge {{ movie['category'] }}">
-            {{ 'Izisobanuye' if movie['category'] == 'translated' else 'Izidasobanuye' }}
+            {{ 'Translated' if movie['category'] == 'translated' else 'Not Translated' }}
         </span>
-        <p class="views">&#128064; {{ movie['views'] }} kurebwa &middot; Yashyizwe: {{ movie['created_at'][:10] }}</p>
-        <p class="description">{{ movie['description'] or 'Nta gusobanura kwa filime.' }}</p>
+        <p class="views">&#128064; {{ movie['views'] }} views &middot; Added: {{ movie['created_at'][:10] }}</p>
+        <p class="description">{{ movie['description'] or 'No movie description available.' }}</p>
         {% if is_owner %}
             <form method="post" action="{{ url_for('delete_movie', movie_id=movie['id']) }}"
-                  onsubmit="return confirm('Ukoza niba ushaka gusiba iyi filime?');">
+                  onsubmit="return confirm('Are you sure you want to delete this movie?');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="btn btn-danger">Siba iyi filime</button>
+                <button type="submit" class="btn btn-danger">Delete Movie</button>
             </form>
         {% endif %}
     </div>
@@ -39,7 +39,7 @@
 
 {% if related %}
 <section class="related">
-    <h2>Izi nizo zikunzwe muri iki cyiciro</h2>
+    <h2>More in this category</h2>
     <div class="movie-grid">
         {% for m in related %}
             <article class="movie-card">

@@ -404,9 +404,9 @@ def login():
         if user is not None and check_password_hash(user["password_hash"], password):
             session["is_owner"] = True
             session["username"] = user["username"]
-            flash("Murakaza neza!", "success")
+            flash("Welcome back!", "success")
             return redirect(url_for("index"))
-        flash("Izina cyangwa ijambobanga ntabwo aribyo.", "error")
+        flash("The username or password is incorrect.", "error")
     return render_template("login.html")
 
 
@@ -415,7 +415,7 @@ def login():
 def logout():
     validate_csrf()
     session.clear()
-    flash("Wasohotse.", "info")
+    flash("You have signed out.", "info")
     return redirect(url_for("index"))
 
 
@@ -430,14 +430,14 @@ def upload():
         video = request.files.get("video")
 
         if not title or category not in ("translated", "nontranslated"):
-            flash("Tanga umutwe n'icyiciro by'umwe.", "error")
+            flash("Enter a title and select a category.", "error")
             return redirect(url_for("upload"))
         if not video or not video.filename:
-            flash("Video ntiboneye.", "error")
+            flash("No video file was selected.", "error")
             return redirect(url_for("upload"))
 
         if not allowed_file(video.filename, ALLOWED_VIDEO_EXTENSIONS):
-            flash("Hitamo dosiye yemewe ya video.", "error")
+            flash("Choose a supported video file.", "error")
             return redirect(url_for("upload"))
 
         video_name = unique_upload_name(video.filename)
@@ -466,7 +466,7 @@ def upload():
         conn.close()
         save_catalog_manifest()
 
-        flash("Filime yongeweho neza!", "success")
+        flash("The movie was uploaded successfully.", "success")
         return redirect(url_for("category_page", category=category))
 
     return render_template("upload.html")
@@ -492,7 +492,7 @@ def delete_movie(movie_id):
         poster_path = os.path.join(POSTER_DIR, movie["poster_file"])
         if os.path.exists(poster_path):
             os.remove(poster_path)
-    flash("Filime yahanaguwe.", "info")
+    flash("The movie was deleted.", "info")
     return redirect(url_for("index"))
 
 
@@ -517,12 +517,12 @@ def uploaded_poster(filename):
 
 @app.errorhandler(403)
 def forbidden(e):
-    return render_template("error.html", code=403, message="Uruhushya nturimo. Owner gusa niwe ubashisha kongera filime."), 403
+    return render_template("error.html", code=403, message="Access denied. Only the owner can add movies."), 403
 
 
 @app.errorhandler(404)
 def not_found(e):
-    return render_template("error.html", code=404, message="Iyi filime ntaboneka."), 404
+    return render_template("error.html", code=404, message="This movie was not found."), 404
 
 
 @app.errorhandler(413)
@@ -530,7 +530,7 @@ def upload_too_large(e):
     return render_template(
         "error.html",
         code=413,
-        message="Dosiye ya video irarenze urugero rwemewe.",
+        message="The video file exceeds the upload limit.",
     ), 413
 
 
