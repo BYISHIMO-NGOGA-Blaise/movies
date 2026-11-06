@@ -72,8 +72,20 @@ def save_catalog_manifest():
         "SELECT title, description, category, video_file, poster_file, views, created_at "
         "FROM movies ORDER BY id"
     ).fetchall()
+    songs = conn.execute(
+        "SELECT title, artist, description, audio_file, created_at "
+        "FROM songs ORDER BY id"
+    ).fetchall()
+    live_matches = conn.execute(
+        "SELECT title, description, stream_url, embed_url, scheduled_at, is_live, created_at "
+        "FROM live_matches ORDER BY id"
+    ).fetchall()
     conn.close()
-    catalog = [dict(movie) for movie in movies]
+    catalog = {
+        "movies": [dict(movie) for movie in movies],
+        "songs": [dict(song) for song in songs],
+        "live_matches": [dict(match) for match in live_matches],
+    }
     temp_path = CATALOG_MANIFEST + ".tmp"
     os.makedirs(os.path.dirname(CATALOG_MANIFEST), exist_ok=True)
     with open(temp_path, "w", encoding="utf-8") as output:
@@ -89,12 +101,14 @@ def restore_catalog_manifest():
             catalog = json.load(source)
     except (OSError, json.JSONDecodeError):
         return
+    if isinstance(catalog, list):
+        catalog = {"movies": catalog}
 
     conn = get_db()
     existing = {
         row["video_file"] for row in conn.execute("SELECT video_file FROM movies")
     }
-    for movie in catalog:
+    for movie in catalog.get("movies", []):
         video_file = movie.get("video_file")
         if movie.get("category") not in ("translated", "nontranslated"):
             continue
@@ -116,6 +130,51 @@ def restore_catalog_manifest():
             ),
         )
         existing.add(video_file)
+
+    existing_songs = {
+        row["audio_file"] for row in conn.execute("SELECT audio_file FROM songs")
+    }
+    for song in catalog.get("songs", []):
+        audio_file = song.get("audio_file")
+        audio_path = os.path.join(UPLOAD_DIR, os.path.basename(audio_file or ""))
+        if not audio_file or audio_file in existing_songs or not os.path.isfile(audio_path):
+            continue
+        conn.execute(
+            "INSERT INTO songs (title, artist, description, audio_file, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                song.get("title", ""),
+                song.get("artist", ""),
+                song.get("description", ""),
+                audio_file,
+                song.get("created_at", datetime.now().isoformat()),
+            ),
+        )
+        existing_songs.add(audio_file)
+
+    existing_live = {
+        (row["title"], row["scheduled_at"])
+        for row in conn.execute("SELECT title, scheduled_at FROM live_matches")
+    }
+    for match in catalog.get("live_matches", []):
+        key = (match.get("title", ""), match.get("scheduled_at", ""))
+        if key in existing_live:
+            continue
+        conn.execute(
+            "INSERT INTO live_matches "
+            "(title, description, stream_url, embed_url, scheduled_at, is_live, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                match.get("title", ""),
+                match.get("description", ""),
+                match.get("stream_url", ""),
+                match.get("embed_url", ""),
+                match.get("scheduled_at", ""),
+                match.get("is_live", 0),
+                match.get("created_at", datetime.now().isoformat()),
+            ),
+        )
+        existing_live.add(key)
     conn.commit()
     conn.close()
 
@@ -496,6 +555,7 @@ def manage_live_match():
         )
         conn.commit()
         conn.close()
+        save_catalog_manifest()
         flash("Live match added successfully.", "success")
         return redirect(url_for("live_matches"))
     return render_template("manage_live.html")
@@ -511,6 +571,7 @@ def delete_live_match(match_id):
     conn.close()
     if result.rowcount == 0:
         abort(404)
+    save_catalog_manifest()
     flash("Live match deleted.", "info")
     return redirect(url_for("live_matches"))
 
@@ -614,6 +675,7 @@ def upload_song():
         )
         conn.commit()
         conn.close()
+        save_catalog_manifest()
         flash("The song was uploaded successfully.", "success")
         return redirect(url_for("songs"))
 
@@ -659,6 +721,7 @@ def delete_song(song_id):
     audio_path = os.path.join(UPLOAD_DIR, song["audio_file"])
     if os.path.isfile(audio_path):
         os.remove(audio_path)
+    save_catalog_manifest()
     flash("The song was deleted.", "info")
     return redirect(url_for("songs"))
 

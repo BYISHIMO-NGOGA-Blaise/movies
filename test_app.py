@@ -208,6 +208,42 @@ def test_catalog_manifest_recovers_movies_after_database_reset(client):
     assert row == ("Persisted Movie", "nontranslated")
 
 
+def test_catalog_manifest_recovers_songs_and_live_matches_after_database_reset(client):
+    with open(os.path.join(app_module.UPLOAD_DIR, "persisted.mp3"), "wb") as audio:
+        audio.write(b"persisted audio")
+
+    connection = sqlite3.connect(app_module.DATABASE)
+    connection.execute(
+        "INSERT INTO songs (title, artist, description, audio_file, created_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        ("Persisted Song", "Artist", "", "persisted.mp3", "2026-01-01T00:00:00"),
+    )
+    connection.execute(
+        "INSERT INTO live_matches "
+        "(title, description, stream_url, embed_url, scheduled_at, is_live, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("Persisted Match", "", "https://example.com/live.m3u8", "", "2026-11-07T20:00", 1, "2026-01-01T00:00:00"),
+    )
+    connection.commit()
+    connection.close()
+    app_module.save_catalog_manifest()
+
+    os.remove(app_module.DATABASE)
+    app_module.init_db()
+    app_module.restore_catalog_manifest()
+
+    connection = sqlite3.connect(app_module.DATABASE)
+    song = connection.execute(
+        "SELECT title, audio_file FROM songs WHERE audio_file = 'persisted.mp3'"
+    ).fetchone()
+    match = connection.execute(
+        "SELECT title, is_live FROM live_matches WHERE title = 'Persisted Match'"
+    ).fetchone()
+    connection.close()
+    assert song == ("Persisted Song", "persisted.mp3")
+    assert match == ("Persisted Match", 1)
+
+
 def test_owner_can_upload_and_play_song(client):
     client.post(app_module.OWNER_LOGIN_PATH, data={
         "username": "owner",
