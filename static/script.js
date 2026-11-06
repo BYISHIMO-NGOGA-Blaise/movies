@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
                 request.addEventListener("load", function () {
                     if (request.status >= 200 && request.status < 400) {
-                        window.location.href = request.responseURL || uploadForm.action.replace(/\/upload$/, "/");
+                        window.location.href = request.responseURL || uploadForm.action;
                         return;
                     }
                     button.disabled = false;

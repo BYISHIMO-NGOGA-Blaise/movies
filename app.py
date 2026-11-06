@@ -402,7 +402,7 @@ def upload():
         conn.close()
 
         flash("Filime yongeweho neza!", "success")
-        return redirect(url_for("index"))
+        return redirect(url_for("category_page", category=category))
 
     return render_template("upload.html")
 

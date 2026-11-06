@@ -137,3 +137,41 @@ def test_upload_page_contains_progress_ui(client):
     assert response.status_code == 200
     assert b'id="upload-progress"' in response.data
     assert b'id="upload-progress-bar"' in response.data
+
+
+def test_upload_preserves_movies_in_other_category(client):
+    connection = sqlite3.connect(app_module.DATABASE)
+    connection.execute(
+        "INSERT INTO movies (title, description, category, video_file, created_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        ("Existing Original", "", "nontranslated", "original.mp4", "2026-01-01T00:00:00"),
+    )
+    connection.commit()
+    connection.close()
+
+    token = csrf_token(client)
+    client.post("/login", data={
+        "username": "owner", "password": "admin123", "csrf_token": token
+    })
+
+    response = client.post("/upload", data={
+        "csrf_token": csrf_token(client, "/upload"),
+        "title": "New Translation",
+        "description": "",
+        "category": "translated",
+        "video": (io.BytesIO(b"not a real mp4 video"), "translated.mp4"),
+    }, content_type="multipart/form-data")
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/category/translated")
+
+    connection = sqlite3.connect(app_module.DATABASE)
+    rows = connection.execute(
+        "SELECT title, category FROM movies ORDER BY id"
+    ).fetchall()
+    connection.close()
+
+    assert rows == [
+        ("Existing Original", "nontranslated"),
+        ("New Translation", "translated"),
+    ]
