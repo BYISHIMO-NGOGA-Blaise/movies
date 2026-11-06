@@ -14,6 +14,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 var progressTrack = progress.querySelector(".upload-progress-track");
                 var progressLabel = document.getElementById("upload-progress-label");
                 progress.hidden = false;
+                progress.style.display = "block";
+                progressBar.style.width = "1%";
+                progressLabel.textContent = "Iri gutangira: 0%";
 
                 var request = new XMLHttpRequest();
                 request.open("POST", uploadForm.action);

@@ -370,6 +370,15 @@ body {
 
 .upload-progress {
     margin: 4px 0 16px;
+    width: 100%;
+}
+
+.upload-progress[hidden] {
+    display: none;
+}
+
+.upload-progress:not([hidden]) {
+    display: block;
 }
 
 .upload-progress-track {

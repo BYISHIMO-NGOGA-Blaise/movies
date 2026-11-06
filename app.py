@@ -243,7 +243,7 @@ def security_headers(response):
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
     if request.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=604800, immutable"
+        response.headers["Cache-Control"] = "public, max-age=300, must-revalidate"
     elif request.path.startswith("/uploads/posters/"):
         response.headers["Cache-Control"] = "public, max-age=86400"
     if production:
