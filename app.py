@@ -3,6 +3,7 @@ import secrets
 import shutil
 import subprocess
 import uuid
+import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import wraps
@@ -29,7 +30,7 @@ except ImportError:
 
 ADMIN_USERNAME = os.environ.get("MOVIESHUB_USERNAME", "owner")
 OWNER_LOGIN_PATH = "/" + os.environ.get(
-    "MOVIESHUB_OWNER_LOGIN_PATH", "owner-access"
+    "MOVIESHUB_OWNER_LOGIN_PATH", "owner-entry-7f3a9c"
 ).strip("/")
 
 app = Flask(__name__)
@@ -60,6 +61,61 @@ poster_executor = ThreadPoolExecutor(max_workers=POSTER_WORKERS, thread_name_pre
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(POSTER_DIR, exist_ok=True)
+CATALOG_MANIFEST = os.path.join(os.path.dirname(DATABASE), "movieshub-catalog.json")
+
+
+def save_catalog_manifest():
+    conn = get_db()
+    movies = conn.execute(
+        "SELECT title, description, category, video_file, poster_file, views, created_at "
+        "FROM movies ORDER BY id"
+    ).fetchall()
+    conn.close()
+    catalog = [dict(movie) for movie in movies]
+    temp_path = CATALOG_MANIFEST + ".tmp"
+    os.makedirs(os.path.dirname(CATALOG_MANIFEST), exist_ok=True)
+    with open(temp_path, "w", encoding="utf-8") as output:
+        json.dump(catalog, output, ensure_ascii=False)
+    os.replace(temp_path, CATALOG_MANIFEST)
+
+
+def restore_catalog_manifest():
+    if not os.path.isfile(CATALOG_MANIFEST):
+        return
+    try:
+        with open(CATALOG_MANIFEST, "r", encoding="utf-8") as source:
+            catalog = json.load(source)
+    except (OSError, json.JSONDecodeError):
+        return
+
+    conn = get_db()
+    existing = {
+        row["video_file"] for row in conn.execute("SELECT video_file FROM movies")
+    }
+    for movie in catalog:
+        video_file = movie.get("video_file")
+        if movie.get("category") not in ("translated", "nontranslated"):
+            continue
+        video_path = os.path.join(UPLOAD_DIR, os.path.basename(video_file or ""))
+        if not video_file or video_file in existing or not os.path.isfile(video_path):
+            continue
+        conn.execute(
+            "INSERT INTO movies "
+            "(title, description, category, video_file, poster_file, views, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                movie.get("title", ""),
+                movie.get("description", ""),
+                movie.get("category", ""),
+                video_file,
+                movie.get("poster_file"),
+                movie.get("views", 0),
+                movie.get("created_at", datetime.now().isoformat()),
+            ),
+        )
+        existing.add(video_file)
+    conn.commit()
+    conn.close()
 
 
 def get_db():
@@ -260,7 +316,12 @@ def health():
         conn = get_db()
         conn.execute("SELECT 1").fetchone()
         conn.close()
-        return {"status": "ok"}, 200
+        return {
+            "status": "ok",
+            "storage_mounted": os.path.ismount("/data") if production else True,
+            "database_persistent": os.path.dirname(DATABASE) == "/data",
+            "uploads_persistent": UPLOAD_DIR.startswith("/data/"),
+        }, 200
     except Exception:
         return {"status": "unhealthy"}, 503
 
@@ -403,6 +464,7 @@ def upload():
         )
         conn.commit()
         conn.close()
+        save_catalog_manifest()
 
         flash("Filime yongeweho neza!", "success")
         return redirect(url_for("category_page", category=category))
@@ -422,6 +484,7 @@ def delete_movie(movie_id):
     conn.execute("DELETE FROM movies WHERE id = ?", (movie_id,))
     conn.commit()
     conn.close()
+    save_catalog_manifest()
     for path in (os.path.join(UPLOAD_DIR, movie["video_file"]),):
         if os.path.exists(path):
             os.remove(path)
@@ -481,6 +544,7 @@ def bad_request(e):
 
 
 init_db()
+restore_catalog_manifest()
 
 if __name__ == "__main__":
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"

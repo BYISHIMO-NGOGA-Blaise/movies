@@ -44,7 +44,7 @@ def test_public_pages_and_database(client):
     assert client.get("/login").status_code == 404
     health = client.get("/healthz")
     assert health.status_code == 200
-    assert health.get_json() == {"status": "ok"}
+    assert health.get_json()["status"] == "ok"
     assert client.get("/").headers["X-Content-Type-Options"] == "nosniff"
 
     connection = sqlite3.connect(app_module.DATABASE)
@@ -178,3 +178,29 @@ def test_upload_preserves_movies_in_other_category(client):
         ("Existing Original", "nontranslated"),
         ("New Translation", "translated"),
     ]
+
+
+def test_catalog_manifest_recovers_movies_after_database_reset(client):
+    with open(os.path.join(app_module.UPLOAD_DIR, "persisted.mp4"), "wb") as video:
+        video.write(b"persisted video")
+
+    connection = sqlite3.connect(app_module.DATABASE)
+    connection.execute(
+        "INSERT INTO movies (title, description, category, video_file, created_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        ("Persisted Movie", "", "nontranslated", "persisted.mp4", "2026-01-01T00:00:00"),
+    )
+    connection.commit()
+    connection.close()
+    app_module.save_catalog_manifest()
+
+    os.remove(app_module.DATABASE)
+    app_module.init_db()
+    app_module.restore_catalog_manifest()
+
+    connection = sqlite3.connect(app_module.DATABASE)
+    row = connection.execute(
+        "SELECT title, category FROM movies WHERE video_file = 'persisted.mp4'"
+    ).fetchone()
+    connection.close()
+    assert row == ("Persisted Movie", "nontranslated")
