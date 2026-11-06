@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Live Matches - MoviesHub{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <span class="hero-eyebrow">Live sports</span>
+    <h1>Watch <span class="accent">Live Matches</span></h1>
+    <p>Follow current streams and scheduled match events.</p>
+</section>
+
+<section class="live-grid">
+    {% for match in matches %}
+    <article class="live-card">
+        <div class="live-status {% if match['is_live'] %}on-air{% endif %}">
+            {{ 'LIVE NOW' if match['is_live'] else 'Scheduled' }}
+        </div>
+        <h2>{{ match['title'] }}</h2>
+        <p>{{ match['description'] or 'Live match stream.' }}</p>
+        <time datetime="{{ match['scheduled_at'] }}">{{ match['scheduled_at'] }}</time>
+        {% if match['stream_url'] or match['embed_url'] %}
+        <a class="btn btn-primary" href="{{ url_for('live_match', match_id=match['id']) }}">Watch Match</a>
+        {% endif %}
+        {% if is_owner %}
+        <form method="post" action="{{ url_for('delete_live_match', match_id=match['id']) }}"
+              onsubmit="return confirm('Delete this live match?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+    </article>
+    {% else %}
+    <div class="empty-state">
+        <p>No live matches are scheduled yet.</p>
+        {% if is_owner %}
+        <a class="btn btn-primary" href="{{ url_for('manage_live_match') }}">Add Live Match</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

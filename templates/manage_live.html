@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Add Live Match - MoviesHub{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <h1>Add Live Match</h1>
+    <p class="auth-note">Add an HTTPS stream URL and schedule the match.</p>
+    <form method="post" action="{{ url_for('manage_live_match') }}" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="field">
+            <label for="title">Match title *</label>
+            <input type="text" id="title" name="title" required>
+        </div>
+        <div class="field">
+            <label for="scheduled_at">Schedule *</label>
+            <input type="datetime-local" id="scheduled_at" name="scheduled_at" required>
+        </div>
+        <div class="field">
+            <label for="stream_url">Direct HLS stream URL (.m3u8)</label>
+            <input type="url" id="stream_url" name="stream_url" placeholder="https://provider.example/live.m3u8">
+        </div>
+        <div class="field">
+            <label for="embed_url">Embed player URL</label>
+            <input type="url" id="embed_url" name="embed_url" placeholder="https://provider.example/embed/match">
+        </div>
+        <div class="field">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4"></textarea>
+        </div>
+        <label class="live-toggle">
+            <input type="checkbox" name="is_live" value="1">
+            Currently live
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Add Match</button>
+    </form>
+    <a href="{{ url_for('live_matches') }}" class="back-link">&larr; Back to live matches</a>
+</section>
+{% endblock %}

@@ -50,8 +50,9 @@ def test_public_pages_and_database(client):
     connection = sqlite3.connect(app_module.DATABASE)
     tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     connection.close()
-    assert {"users", "movies", "songs"}.issubset(tables)
+    assert {"users", "movies", "songs", "live_matches"}.issubset(tables)
     assert client.get("/songs").status_code == 200
+    assert client.get("/live").status_code == 200
 
 
 def test_owner_login_logout_csrf(client):
@@ -233,3 +234,29 @@ def test_owner_can_upload_and_play_song(client):
     assert page.status_code == 200
     assert b"Test Song" in page.data
     assert client.get(f"/uploads/{song[2]}").status_code == 200
+
+
+def test_owner_can_add_live_match(client):
+    client.post(app_module.OWNER_LOGIN_PATH, data={
+        "username": "owner",
+        "password": "admin123",
+        "csrf_token": csrf_token(client),
+    })
+    response = client.post("/live/manage", data={
+        "csrf_token": csrf_token(client, "/live/manage"),
+        "title": "Final Match",
+        "description": "Championship final",
+        "stream_url": "https://example.com/live.m3u8",
+        "embed_url": "",
+        "scheduled_at": "2026-11-07T20:00",
+        "is_live": "1",
+    })
+    assert response.status_code == 302
+
+    connection = sqlite3.connect(app_module.DATABASE)
+    match = connection.execute(
+        "SELECT title, stream_url, is_live FROM live_matches"
+    ).fetchone()
+    connection.close()
+    assert match == ("Final Match", "https://example.com/live.m3u8", 1)
+    assert b"Final Match" in client.get("/live").data

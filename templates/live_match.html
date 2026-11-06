@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ match['title'] }} - Live Match{% endblock %}
+
+{% block content %}
+<section class="live-view">
+    <div class="live-heading">
+        <span class="live-status {% if match['is_live'] %}on-air{% endif %}">
+            {{ 'LIVE NOW' if match['is_live'] else 'Scheduled stream' }}
+        </span>
+        <h1>{{ match['title'] }}</h1>
+        <p>{{ match['description'] }}</p>
+    </div>
+    <div class="video-wrap live-player">
+        {% if match['embed_url'] %}
+        <iframe src="{{ match['embed_url'] }}" title="{{ match['title'] }}" allowfullscreen
+                referrerpolicy="strict-origin-when-cross-origin"
+                sandbox="allow-scripts allow-presentation allow-popups allow-popups-to-escape-sandbox"></iframe>
+        {% elif match['stream_url'] %}
+        <video id="live-video" controls autoplay playsinline data-stream-url="{{ match['stream_url'] }}"></video>
+        {% endif %}
+    </div>
+</section>
+{% if match['stream_url'] and not match['embed_url'] %}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script src="{{ url_for('static', filename='live-player.js') }}"></script>
+{% endif %}
+{% endblock %}

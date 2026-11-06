@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import wraps
 from mimetypes import guess_type
+from urllib.parse import urlparse
 
 from flask import (
     Flask, render_template, request, redirect, url_for, session,
@@ -157,6 +158,16 @@ def init_db():
             audio_file TEXT NOT NULL,
             created_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS live_matches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            stream_url TEXT NOT NULL DEFAULT '',
+            embed_url TEXT NOT NULL DEFAULT '',
+            scheduled_at TEXT NOT NULL,
+            is_live INTEGER NOT NULL DEFAULT 0 CHECK (is_live IN (0, 1)),
+            created_at TEXT NOT NULL
+        );
         """
     )
     conn.executescript(
@@ -194,6 +205,13 @@ def login_required(f):
 
 def allowed_file(filename, extensions):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in extensions
+
+
+def valid_stream_url(value):
+    if not value:
+        return True
+    parsed = urlparse(value.strip())
+    return parsed.scheme in ("http", "https") and bool(parsed.netloc)
 
 
 def get_csrf_token():
@@ -426,6 +444,75 @@ def logout():
     session.clear()
     flash("You have signed out.", "info")
     return redirect(url_for("index"))
+
+
+@app.route("/live")
+def live_matches():
+    conn = get_db()
+    matches = conn.execute(
+        "SELECT * FROM live_matches ORDER BY is_live DESC, scheduled_at ASC"
+    ).fetchall()
+    conn.close()
+    return render_template("live.html", matches=matches)
+
+
+@app.route("/live/<int:match_id>")
+def live_match(match_id):
+    conn = get_db()
+    match = conn.execute("SELECT * FROM live_matches WHERE id = ?", (match_id,)).fetchone()
+    conn.close()
+    if match is None:
+        abort(404)
+    return render_template("live_match.html", match=match)
+
+
+@app.route("/live/manage", methods=["GET", "POST"])
+@login_required
+def manage_live_match():
+    if request.method == "POST":
+        validate_csrf()
+        title = request.form.get("title", "").strip()
+        description = request.form.get("description", "").strip()
+        stream_url = request.form.get("stream_url", "").strip()
+        embed_url = request.form.get("embed_url", "").strip()
+        scheduled_at = request.form.get("scheduled_at", "").strip()
+        is_live = 1 if request.form.get("is_live") == "1" else 0
+        if not title or not scheduled_at:
+            flash("Enter a match title and schedule date.", "error")
+            return redirect(url_for("manage_live_match"))
+        if not valid_stream_url(stream_url) or not valid_stream_url(embed_url):
+            flash("Stream URLs must be valid http or https URLs.", "error")
+            return redirect(url_for("manage_live_match"))
+        if not stream_url and not embed_url:
+            flash("Add at least one stream URL.", "error")
+            return redirect(url_for("manage_live_match"))
+
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO live_matches "
+            "(title, description, stream_url, embed_url, scheduled_at, is_live, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (title, description, stream_url, embed_url, scheduled_at, is_live, datetime.now().isoformat()),
+        )
+        conn.commit()
+        conn.close()
+        flash("Live match added successfully.", "success")
+        return redirect(url_for("live_matches"))
+    return render_template("manage_live.html")
+
+
+@app.route("/live/delete/<int:match_id>", methods=["POST"])
+@login_required
+def delete_live_match(match_id):
+    validate_csrf()
+    conn = get_db()
+    result = conn.execute("DELETE FROM live_matches WHERE id = ?", (match_id,))
+    conn.commit()
+    conn.close()
+    if result.rowcount == 0:
+        abort(404)
+    flash("Live match deleted.", "info")
+    return redirect(url_for("live_matches"))
 
 
 @app.route("/upload", methods=["GET", "POST"])
